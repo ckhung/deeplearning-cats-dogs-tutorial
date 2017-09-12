@@ -48,11 +48,13 @@ def pic2lmdb(pics, keep, lmdbpath):
     global pcid2nl, nl2tl
     print 'Creating {}'.format(lmdbpath)
     subprocess.call(['rm', '-f'] + glob.glob(lmdbpath + '/*.mdb'))
-    in_db = lmdb.open(lmdbpath, map_size=int(1e12))
+    subprocess.call(['mkdir', '-p', lmdbpath])
     included = [0 for x in nl2tl]
     seen = [0 for x in nl2tl]
     n_digits = len(str(len(nl2tl)-1))
-    with in_db.begin(write=True) as in_txn:
+    idx_file = open(lmdbpath+'/index.txt', 'w')
+    out_lmdb = lmdb.open(lmdbpath, map_size=int(1e12))
+    with out_lmdb.begin(write=True) as in_txn:
         for in_idx, img_path in enumerate(pics):
             for pcid in pcid2nl:
                 m = re.search(r'\b('+pcid+r')\b', img_path)
@@ -67,11 +69,13 @@ def pic2lmdb(pics, keep, lmdbpath):
             if not keep(seen[nl]):
                 continue
             included[nl] += 1
+            idx_file.write(img_path+'\n')
             img = cv2.imread(img_path, cv2.IMREAD_COLOR)
             img = transform_img(img, img_width=IMAGE_WIDTH, img_height=IMAGE_HEIGHT)
             datum = make_datum(img, nl)
             in_txn.put('{:0>5d}'.format(in_idx), datum.SerializeToString())
-    in_db.close()
+    # out_lmdb.close()
+    idx_file.close()
     total = 0
     for nl, tl in enumerate(nl2tl):
         total += included[nl]

@@ -4,6 +4,9 @@
 import numpy as np
 import argparse, sys, caffe, os, re
 
+def explicit_path(p):
+    return re.search(r'^\.{0,2}/', p)
+
 parser = argparse.ArgumentParser(
     description='classify images using bvlc_reference_caffenet',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -26,13 +29,13 @@ args = parser.parse_args()
 caffe.set_mode_cpu()
 if args.caffe[-1] != '/':
     args.caffe += '/'
-if not args.labels[0] in '/.':
+if not explicit_path(args.labels):
     args.labels = args.caffe + args.labels
-if not args.mean[0] in '/.':
+if not explicit_path(args.mean):
     args.mean = args.caffe + args.mean
-if not args.model[0] in '/.':
+if not explicit_path(args.model):
     args.model = args.caffe + args.model
-if not args.weights[0] in '/.':
+if not explicit_path(args.weights):
     args.weights = args.caffe + args.weights
 net = caffe.Net(args.model, args.weights, caffe.TEST) 
 
