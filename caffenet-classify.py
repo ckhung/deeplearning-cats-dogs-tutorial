@@ -2,7 +2,7 @@
 # modified from https://nbviewer.jupyter.org/github/BVLC/caffe/blob/master/examples/00-classification.ipynb
 
 import numpy as np
-import argparse, sys, caffe, os, pprint
+import argparse, sys, caffe, os, re, pprint
 
 parser = argparse.ArgumentParser(
     description='classify images using bvlc_reference_caffenet',
@@ -47,7 +47,17 @@ net.blobs['data'].reshape(10, 3, 227, 227)
 images = [caffe.io.load_image(img_f) for img_f in args.image_files]
 transformed_images = [transformer.preprocess('data', img) for img in images]
 
-labels = np.loadtxt(args.labels, str)
+with open(args.labels) as f:
+    all_lines = f.readlines()
+labels = []
+for line in all_lines:
+    m = re.search(r'^\s*(\w+)(\s+(.*))?', line)
+    if m:
+        tl = m.group(3)
+        pcid = m.group(1)
+        name = m.group(3) if m.group(3) else pcid
+        labels.append([pcid, name])
+labels = np.array(labels)
 for i in range(len(args.image_files)):
     net.blobs['data'].data[i,...] = transformed_images[i]
 output = net.forward()
