@@ -75,5 +75,5 @@ for i in range(len(args.image_files)):
             tmp = [c for x in t_img for y in x for c in y]
             print '# hist of trans {}'.format(np.histogram(tmp, bins=5))
     for i, t in enumerate(top):
-        print '#{} {:.3f} {:10} {:}'.format(i, prob[i], labels[t][0], labels[t][1])
+        print '#{} {:.3f} {:10} {:}'.format(i+1, prob[i], labels[t][0], labels[t][1])
     print
