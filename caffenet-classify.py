@@ -2,7 +2,7 @@
 # modified from https://nbviewer.jupyter.org/github/BVLC/caffe/blob/master/examples/00-classification.ipynb
 
 import numpy as np
-import argparse, sys, caffe, os, re, pprint
+import argparse, sys, caffe, os, re
 
 parser = argparse.ArgumentParser(
     description='classify images using bvlc_reference_caffenet',
@@ -42,7 +42,7 @@ transformer.set_mean('data', np.load(args.mean).mean(1).mean(1))
 transformer.set_raw_scale('data', 255)
 transformer.set_channel_swap('data', (2,1,0))
 
-net.blobs['data'].reshape(10, 3, 227, 227)
+net.blobs['data'].reshape(999, 3, 227, 227)
 
 images = [caffe.io.load_image(img_f) for img_f in args.image_files]
 transformed_images = [transformer.preprocess('data', img) for img in images]
@@ -56,14 +56,13 @@ for line in all_lines:
         tl = m.group(3)
         pcid = m.group(1)
         name = m.group(3) if m.group(3) else pcid
-        labels.append([pcid, name])
-labels = np.array(labels)
+        labels.append((pcid, name))
+# labels = np.array(labels)
 for i in range(len(args.image_files)):
     net.blobs['data'].data[i,...] = transformed_images[i]
 output = net.forward()
 top_guesses = [prob.argsort()[::-1][:args.top] for prob in output['prob']]
 print
-pp = pprint.PrettyPrinter(indent=4, width=args.width)
 for i in range(len(args.image_files)):
     (fn, img, t_img, top, prob) = (args.image_files[i], images[i],
 	    transformed_images[i], top_guesses[i], output['prob'][i][top_guesses[i]])
@@ -75,5 +74,6 @@ for i in range(len(args.image_files)):
             print '# hist of orig {}'.format(np.histogram(tmp, bins=5))
             tmp = [c for x in t_img for y in x for c in y]
             print '# hist of trans {}'.format(np.histogram(tmp, bins=5))
-    pp.pprint(zip(labels[top], prob)) 
+    for i, t in enumerate(top):
+        print '#{} {:.3f} {:10} {:}'.format(i, prob[i], labels[t][0], labels[t][1])
     print

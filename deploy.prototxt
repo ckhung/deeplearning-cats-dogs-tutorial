@@ -3,7 +3,7 @@ layer {
   name: "data"
   type: "Input"
   top: "data"
-  input_param { shape: { dim: 1 dim: 3 dim: 227 dim: 227 } }
+  input_param { shape: { dim: 999 dim: 3 dim: 227 dim: 227 } }
 }
 layer {
   name: "conv1"
@@ -197,17 +197,17 @@ layer {
   }
 }
 layer {
-  name: "fc8-cats-dogs"
+  name: "fc8-apes"
   type: "InnerProduct"
   bottom: "fc7"
-  top: "fc8-cats-dogs"
+  top: "fc8-apes"
   inner_product_param {
-    num_output: 2
+    num_output: 6
   }
 }
 layer {
   name: "prob"
   type: "Softmax"
-  bottom: "fc8-cats-dogs"
+  bottom: "fc8-apes"
   top: "prob"
 }
