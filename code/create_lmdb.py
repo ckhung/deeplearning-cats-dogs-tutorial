@@ -1,28 +1,26 @@
+#!/usr/bin/python
 '''
 Title           :create_lmdb.py
 Description     :This script divides the training images into 2 sets and stores them in lmdb databases for training and validation.
-Author          :Adil Moujahid
+Author          :Adil Moujahid/Chao-Kuei Hung
 Date Created    :20160619
-Date Modified   :20160625
-version         :0.2
-usage           :python create_lmdb.py
-python_version  :2.7.11
+Date Modified   :20170911
+usage           :./pic2lmdb.py
+python_version  :2.7.*
 '''
 
-import os
-import glob
-import random
+import argparse, re, subprocess, glob, random, cv2, warnings, lmdb
 import numpy as np
-
-import cv2
 
 import caffe
 from caffe.proto import caffe_pb2
-import lmdb
 
 #Size of images
 IMAGE_WIDTH = 227
 IMAGE_HEIGHT = 227
+
+pcid2nl = {}    # picture class id to numerical label
+nl2tl = []      # numerical label to text label
 
 def transform_img(img, img_width=IMAGE_WIDTH, img_height=IMAGE_HEIGHT):
 
@@ -36,7 +34,6 @@ def transform_img(img, img_width=IMAGE_WIDTH, img_height=IMAGE_HEIGHT):
 
     return img
 
-
 def make_datum(img, label):
     #image is numpy.ndarray format. BGR instead of RGB
     return caffe_pb2.Datum(
@@ -44,56 +41,76 @@ def make_datum(img, label):
         width=IMAGE_WIDTH,
         height=IMAGE_HEIGHT,
         label=label,
-        data=np.rollaxis(img, 2).tostring())
+        data=np.rollaxis(img, 2).tostring()
+    )
 
-train_lmdb = '/home/ubuntu/deeplearning-cats-dogs-tutorial/input/train_lmdb'
-validation_lmdb = '/home/ubuntu/deeplearning-cats-dogs-tutorial/input/validation_lmdb'
+def pic2lmdb(pics, keep, lmdbpath):
+    global pcid2nl, nl2tl
+    print 'Creating {}'.format(lmdbpath)
+    subprocess.call(['rm', '-f'] + glob.glob(lmdbpath + '/*.mdb'))
+    in_db = lmdb.open(lmdbpath, map_size=int(1e12))
+    included = [0 for x in nl2tl]
+    seen = [0 for x in nl2tl]
+    n_digits = len(str(len(nl2tl)-1))
+    with in_db.begin(write=True) as in_txn:
+        for in_idx, img_path in enumerate(pics):
+            for pcid in pcid2nl:
+                m = re.search(r'\b('+pcid+r')\b', img_path)
+                if m:
+                    break
+            if m:
+                nl = pcid2nl[pcid]
+                tl = nl2tl[nl]
+            else:
+                warnings.warn('file path "{}" does not contain any pcid, ignored'.format(img_path))
+            seen[nl] += 1
+            if not keep(seen[nl]):
+                continue
+            included[nl] += 1
+            img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+            img = transform_img(img, img_width=IMAGE_WIDTH, img_height=IMAGE_HEIGHT)
+            datum = make_datum(img, nl)
+            in_txn.put('{:0>5d}'.format(in_idx), datum.SerializeToString())
+    in_db.close()
+    total = 0
+    for nl, tl in enumerate(nl2tl):
+        total += included[nl]
+        print ('{:>5} [{:0>'+str(n_digits)+'}] {}').format(included[nl], nl, nl2tl[nl])
+    print '-'*20
+    print '{:>5} {}'.format(total, 'TOTAL')
+    print
 
-os.system('rm -rf  ' + train_lmdb)
-os.system('rm -rf  ' + validation_lmdb)
+parser = argparse.ArgumentParser(
+    description='given a directory of jpg images, create 2 lmdb directories, one for training, the other for validation',
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument('-g', '--group', type=int,
+    default=6, help='number of groups in training/validation split')
+parser.add_argument('-i', '--index', type=int,
+    default=0, help='which group as validation in training/validation split')
+parser.add_argument('-s', '--seed', type=int,
+    default=0, help='random seed')
+parser.add_argument('--training', type=str,
+    default='training', help='path for training lmdb')
+parser.add_argument('--validation', type=str,
+    default='validation', help='path for validation lmdb')
+parser.add_argument('LABEL', help='label file')
+parser.add_argument('PICS', help='path of pictures')
+args = parser.parse_args()
 
+with open(args.LABEL) as f:
+    all_labels = f.readlines()
 
-train_data = [img for img in glob.glob("../input/train/*jpg")]
-test_data = [img for img in glob.glob("../input/test1/*jpg")]
-
-#Shuffle train_data
+for line in all_labels:
+    m = re.search(r'^\s*(\w+)(\s+(\S+))?', line)
+    if m:
+        tl = m.group(3)
+        if not tl in nl2tl:
+            nl2tl.append(tl)
+        nl = nl2tl.index(tl)    # numerical label
+        pcid2nl[m.group(1)] = nl
+train_data = sorted([img for img in glob.glob(args.PICS + '/*jpg')])
+random.seed(args.seed)
 random.shuffle(train_data)
+pic2lmdb(train_data, lambda x: x%args.group!=args.index, args.training)
+pic2lmdb(train_data, lambda x: x%args.group==args.index, args.validation)
 
-print 'Creating train_lmdb'
-
-in_db = lmdb.open(train_lmdb, map_size=int(1e12))
-with in_db.begin(write=True) as in_txn:
-    for in_idx, img_path in enumerate(train_data):
-        if in_idx %  6 == 0:
-            continue
-        img = cv2.imread(img_path, cv2.IMREAD_COLOR)
-        img = transform_img(img, img_width=IMAGE_WIDTH, img_height=IMAGE_HEIGHT)
-        if 'cat' in img_path:
-            label = 0
-        else:
-            label = 1
-        datum = make_datum(img, label)
-        in_txn.put('{:0>5d}'.format(in_idx), datum.SerializeToString())
-        print '{:0>5d}'.format(in_idx) + ':' + img_path
-in_db.close()
-
-
-print '\nCreating validation_lmdb'
-
-in_db = lmdb.open(validation_lmdb, map_size=int(1e12))
-with in_db.begin(write=True) as in_txn:
-    for in_idx, img_path in enumerate(train_data):
-        if in_idx % 6 != 0:
-            continue
-        img = cv2.imread(img_path, cv2.IMREAD_COLOR)
-        img = transform_img(img, img_width=IMAGE_WIDTH, img_height=IMAGE_HEIGHT)
-        if 'cat' in img_path:
-            label = 0
-        else:
-            label = 1
-        datum = make_datum(img, label)
-        in_txn.put('{:0>5d}'.format(in_idx), datum.SerializeToString())
-        print '{:0>5d}'.format(in_idx) + ':' + img_path
-in_db.close()
-
-print '\nFinished processing all images'
