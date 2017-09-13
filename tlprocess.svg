@@ -50,7 +50,7 @@
 <g id="edge6" class="edge"><title>mean_bpt&#45;&gt;mod_train</title>
 <path fill="none" stroke="black" stroke-dasharray="5,2" d="M113.038,-389.799C118.483,-377.932 125.826,-361.928 132.011,-348.449"/>
 <polygon fill="black" stroke="black" points="135.276,-349.724 136.265,-339.175 128.914,-346.805 135.276,-349.724"/>
-<text text-anchor="middle" x="156.646" y="-360.8" font-family="Times,serif" font-size="14.00">mean_file:</text>
+<text text-anchor="middle" x="156.646" y="-360.8" font-family="Times,serif" font-size="14.00" fill="green">mean_file:</text>
 </g>
 <!-- result -->
 <g id="node12" class="node"><title>result</title>
@@ -87,7 +87,7 @@
 <g id="edge7" class="edge"><title>lmdb&#45;&gt;mod_train</title>
 <path fill="none" stroke="black" stroke-dasharray="5,2" d="M241.684,-476.736C235.414,-448.99 219.974,-393.857 190.146,-357 186.914,-353.007 183.136,-349.212 179.159,-345.694"/>
 <polygon fill="black" stroke="black" points="181.308,-342.93 171.357,-339.294 176.869,-348.343 181.308,-342.93"/>
-<text text-anchor="middle" x="247.146" y="-404.3" font-family="Times,serif" font-size="14.00">source:</text>
+<text text-anchor="middle" x="247.146" y="-404.3" font-family="Times,serif" font-size="14.00" fill="green">source:</text>
 </g>
 <!-- mod_solver -->
 <g id="node7" class="node"><title>mod_solver</title>
@@ -98,7 +98,7 @@
 <g id="edge5" class="edge"><title>mod_train&#45;&gt;mod_solver</title>
 <path fill="none" stroke="black" stroke-dasharray="5,2" d="M150.412,-302.969C156.573,-286.224 166.071,-260.41 173.252,-240.892"/>
 <polygon fill="black" stroke="black" points="176.598,-241.934 176.766,-231.341 170.028,-239.517 176.598,-241.934"/>
-<text text-anchor="middle" x="180.646" y="-263.3" font-family="Times,serif" font-size="14.00">net:</text>
+<text text-anchor="middle" x="180.646" y="-263.3" font-family="Times,serif" font-size="14.00" fill="green">net:</text>
 </g>
 <!-- mod_deploy -->
 <g id="node8" class="node"><title>mod_deploy</title>

@@ -113,11 +113,12 @@ parser.add_argument('--training', type=str,
 parser.add_argument('--validation', type=str,
     default='validation', help='path for validation lmdb')
 parser.add_argument('LABEL', help='label file')
-parser.add_argument('PICS', help='path of pictures')
+parser.add_argument('PICS_DIRS', nargs='*',
+    help='directories of pictures')
 args = parser.parse_args()
 
 (pcid2nl, nl2tl) = read_labels(args.LABEL)
-train_data = sorted([img for img in glob.glob(args.PICS + '/*jpg')])
+train_data = sorted([img for eachdir in args.PICS_DIRS for img in glob.glob(eachdir+'/*jpg')])
 random.seed(args.seed)
 random.shuffle(train_data)
 pic2lmdb(train_data, lambda x: x%args.group!=args.index, args.training)
