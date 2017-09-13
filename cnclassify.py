@@ -7,14 +7,32 @@ import argparse, sys, caffe, os, re
 def explicit_path(p):
     return re.search(r'^\.{0,2}/', p)
 
+def read_labels(labelfile):
+    pcid2nl = {}    # picture class id to numerical label
+    nl2tl = []      # numerical label to text label
+    with open(labelfile) as f:
+        all_labels = f.readlines()
+    prev = ''
+    for i, line in enumerate(all_labels):
+        m = re.search(r'^\s*(\w+)(\s+(\S+))?', line)
+        if m:
+            tl = m.group(3)         # text label
+            if tl != prev:
+                if tl in nl2tl:
+                    sys.exit("line {} of {}: {}'s should appear next to each other".format(i+1, args.LABEL, tl))
+                nl2tl.append(tl)
+                prev = tl
+            nl = len(nl2tl)-1       # numerical label
+            pcid2nl[m.group(1)] = nl
+    return (pcid2nl, nl2tl)
+
 parser = argparse.ArgumentParser(
     description='classify images using bvlc_reference_caffenet',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('-c', '--caffe', type=str,
     default=os.environ['CAFFE_ROOT'], help='root directory of caffe')
-parser.add_argument('-t', '--top', type=int, default=5, help='top-most how many guesses')
-parser.add_argument('-v', '--verbose', type=int, default=1, help='verbosity')
-parser.add_argument('-w', '--width', type=int, default=100, help='line width of pretty print')
+parser.add_argument('-f', '--format', type=str,
+    default='top5', help='output format: "top5" or "csv"')
 parser.add_argument('--labels', type=str,
     default='data/ilsvrc12/synset_words.txt', help='labels file')
 parser.add_argument('--mean', type=str,
@@ -27,6 +45,14 @@ parser.add_argument('image_files', nargs='*')
 args = parser.parse_args()
 
 caffe.set_mode_cpu()
+m = re.match(r'^top(\d+)$', args.format)
+if m:
+    topn = int(float(m.group(1)))
+elif args.format == 'csv':
+    topn = 1
+else:
+    sys.exit('unknown format "{}"'.format(args.format))
+    
 if args.caffe[-1] != '/':
     args.caffe += '/'
 if not explicit_path(args.labels):
@@ -50,33 +76,20 @@ net.blobs['data'].reshape(999, 3, 227, 227)
 images = [caffe.io.load_image(img_f) for img_f in args.image_files]
 transformed_images = [transformer.preprocess('data', img) for img in images]
 
-with open(args.labels) as f:
-    all_lines = f.readlines()
-labels = []
-for line in all_lines:
-    m = re.search(r'^\s*(\w+)(\s+(.*))?', line)
-    if m:
-        tl = m.group(3)
-        pcid = m.group(1)
-        name = m.group(3) if m.group(3) else pcid
-        labels.append((pcid, name))
-# labels = np.array(labels)
+(pcid2nl, nl2tl) = read_labels(args.labels)
 for i in range(len(args.image_files)):
     net.blobs['data'].data[i,...] = transformed_images[i]
 output = net.forward()
-top_guesses = [prob.argsort()[::-1][:args.top] for prob in output['prob']]
+top_guesses = [prob.argsort()[::-1][:topn] for prob in output['prob']]
 print
+nlfmt = 'L{:0'+str(len(str(len(nl2tl)-1)))+'d}'
 for i in range(len(args.image_files)):
     (fn, img, t_img, top, prob) = (args.image_files[i], images[i],
 	    transformed_images[i], top_guesses[i], output['prob'][i][top_guesses[i]])
-    if args.verbose > 0:
+    if args.format == 'csv':
+        print ('{:.3f}, '+nlfmt+', {:10}, {}').format(prob[0], top[0], nl2tl[top[0]], fn)
+    else:
         print fn
-        if args.verbose > 1:
-            print '# {} => {}'.format(img.shape, t_img.shape)
-            tmp = [c for x in img for y in x for c in y]
-            print '# hist of orig {}'.format(np.histogram(tmp, bins=5))
-            tmp = [c for x in t_img for y in x for c in y]
-            print '# hist of trans {}'.format(np.histogram(tmp, bins=5))
-    for i, t in enumerate(top):
-        print '#{} {:.3f} {:10} {:}'.format(i+1, prob[i], labels[t][0], labels[t][1])
-    print
+        for i, t in enumerate(top):
+            print ('#{} {:.3f} '+nlfmt+' {} ').format(i+1, prob[i], t, nl2tl[t])
+        print

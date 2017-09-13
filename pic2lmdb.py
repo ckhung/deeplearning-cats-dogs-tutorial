@@ -9,7 +9,7 @@ usage           :./pic2lmdb.py
 python_version  :2.7.*
 '''
 
-import argparse, re, subprocess, glob, random, cv2, warnings, lmdb
+import argparse, re, sys, subprocess, glob, random, cv2, warnings, lmdb
 import numpy as np
 
 import caffe
@@ -19,8 +19,24 @@ from caffe.proto import caffe_pb2
 IMAGE_WIDTH = 227
 IMAGE_HEIGHT = 227
 
-pcid2nl = {}    # picture class id to numerical label
-nl2tl = []      # numerical label to text label
+def read_labels(labelfile):
+    pcid2nl = {}    # picture class id to numerical label
+    nl2tl = []      # numerical label to text label
+    with open(labelfile) as f:
+        all_labels = f.readlines()
+    prev = ''
+    for i, line in enumerate(all_labels):
+        m = re.search(r'^\s*(\w+)(\s+(\S+))?', line)
+        if m:
+            tl = m.group(3)         # text label
+            if tl != prev:
+                if tl in nl2tl:
+                    sys.exit("line {} of {}: {}'s should appear next to each other".format(i+1, args.LABEL, tl))
+                nl2tl.append(tl)
+                prev = tl
+            nl = len(nl2tl)-1       # numerical label
+            pcid2nl[m.group(1)] = nl
+    return (pcid2nl, nl2tl)
 
 def transform_img(img, img_width=IMAGE_WIDTH, img_height=IMAGE_HEIGHT):
 
@@ -74,7 +90,6 @@ def pic2lmdb(pics, keep, lmdbpath):
             img = transform_img(img, img_width=IMAGE_WIDTH, img_height=IMAGE_HEIGHT)
             datum = make_datum(img, nl)
             in_txn.put('{:0>5d}'.format(in_idx), datum.SerializeToString())
-    # out_lmdb.close()
     idx_file.close()
     total = 0
     for nl, tl in enumerate(nl2tl):
@@ -101,17 +116,7 @@ parser.add_argument('LABEL', help='label file')
 parser.add_argument('PICS', help='path of pictures')
 args = parser.parse_args()
 
-with open(args.LABEL) as f:
-    all_labels = f.readlines()
-
-for line in all_labels:
-    m = re.search(r'^\s*(\w+)(\s+(\S+))?', line)
-    if m:
-        tl = m.group(3)
-        if not tl in nl2tl:
-            nl2tl.append(tl)
-        nl = nl2tl.index(tl)    # numerical label
-        pcid2nl[m.group(1)] = nl
+(pcid2nl, nl2tl) = read_labels(args.LABEL)
 train_data = sorted([img for img in glob.glob(args.PICS + '/*jpg')])
 random.seed(args.seed)
 random.shuffle(train_data)
