@@ -16,14 +16,19 @@ You may need to change file and directory paths on the
 command line as well as in the *.prototxt files.
 Try ```./pic2lmdb.py -h``` and ```./cnclassify.py -h```
 to see more options.
+
 Code is forked from [deeplearning-cats-dogs-tutorial](https://github.com/adilmoujahid/deeplearning-cats-dogs-tutorial)
 and extensively modified to make it more generic.
 Also see the blog post: [A Practical Introduction to Deep Learning
 with Caffe and Python](http://adilmoujahid.com/posts/2016/06/introduction-deep-learning-python-caffe/)
 of the original author.
+
 Use vimdiff or similar editors to study the difference
 between my *.prototxt files and the corresponding
 files from caffe or from the original author.
+Also see these two tips for parameter setting in *.prototxt:
+[Running Over Whole Sets/Computing Epochs Instead of Iterations](https://github.com/BVLC/caffe/issues/1094),
+[Choosing batch sizes and tuning sgd](https://github.com/BVLC/caffe/issues/218)
 
 I hope the following illustration is helpful for other
 deep learning newbies behind me.
