@@ -2,7 +2,7 @@
 # modified from https://nbviewer.jupyter.org/github/BVLC/caffe/blob/master/examples/00-classification.ipynb
 
 import numpy as np
-import argparse, sys, caffe, os, re
+import argparse, sys, caffe, os, re, warnings
 
 def explicit_path(p):
     return re.search(r'^\.{0,2}/', p)
@@ -14,12 +14,13 @@ def read_labels(labelfile):
         all_labels = f.readlines()
     prev = ''
     for i, line in enumerate(all_labels):
-        m = re.search(r'^\s*(\w+)(\s+(\S+))?', line)
+        m = re.search(r'^\s*(\w+)(\s+(.*))?', line)
         if m:
             tl = m.group(3)         # text label
             if tl != prev:
                 if tl in nl2tl:
-                    sys.exit("line {} of {}: {}'s should appear next to each other".format(i+1, args.LABEL, tl))
+                    warnings.warn("line {} of {}: 2nd occurrence of '{}' ({}) is not adjacent to the 1st occurrence".format(i+1, args.labels, tl, m.group(1)))
+		    tl += '-' + m.group(1)
                 nl2tl.append(tl)
                 prev = tl
             nl = len(nl2tl)-1       # numerical label
