@@ -37,7 +37,8 @@ digraph "files needed in the process of caffe transfer learning" {
     mean_bpt -> mean_npy [ label="bpt2npy.py" ]
     mod_solver -> weights_ape
     weights_orig -> weights_ape [ label="caffe" ]
-    { weights_ape mod_deploy wnid mean_npy } -> result
+    mean_npy -> result [ style=dotted ]
+    { weights_ape mod_deploy wnid } -> result
     test_pics -> result [ label="cnclassify.py" ]
 }
 

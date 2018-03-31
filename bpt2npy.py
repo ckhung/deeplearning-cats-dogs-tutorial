@@ -14,3 +14,8 @@ blob.ParseFromString(data)
 arr = np.array( caffe.io.blobproto_to_array(blob) )
 out = arr[0]
 np.save( sys.argv[2] , out )
+
+out = out.mean(1).mean(1)
+def ppf(x): return "%0.2f" % x 
+print '[' + ', '.join(map(ppf, out)) + ']'
+

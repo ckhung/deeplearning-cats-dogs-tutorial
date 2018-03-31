@@ -2,7 +2,7 @@
 # modified from https://nbviewer.jupyter.org/github/BVLC/caffe/blob/master/examples/00-classification.ipynb
 
 import numpy as np
-import argparse, sys, caffe, os, re, warnings
+import argparse, sys, caffe, os, re, warnings, ast
 
 def explicit_path(p):
     return re.search(r'^\.{0,2}/', p)
@@ -37,7 +37,9 @@ parser.add_argument('-f', '--format', type=str,
 parser.add_argument('--labels', type=str,
     default='data/ilsvrc12/synset_words.txt', help='labels file')
 parser.add_argument('--mean', type=str,
-    default='python/caffe/imagenet/ilsvrc_2012_mean.npy', help='mean image npy file')
+    default='[103.939, 116.779, 123.68]', help='mean pixel of training data')
+    # visit http://www.robots.ox.ac.uk/~vgg/research/very_deep/
+    # Find "mean pixel" within the two "information page" links
 parser.add_argument('--model', type=str,
     default='models/bvlc_reference_caffenet/deploy.prototxt', help='model def file (deploy)')
 parser.add_argument('--weights', type=str,
@@ -58,8 +60,9 @@ if args.caffe[-1] != '/':
     args.caffe += '/'
 if not explicit_path(args.labels):
     args.labels = args.caffe + args.labels
-if not explicit_path(args.mean):
-    args.mean = args.caffe + args.mean
+args.mean = np.array(ast.literal_eval(args.mean))
+if not (len(args.mean) == 3 and isinstance(args.mean[0], (int, long, float))):
+    sys.exit('correct format is: --mean "[103.939, 116.779, 123.68]"')
 if not explicit_path(args.model):
     args.model = args.caffe + args.model
 if not explicit_path(args.weights):
@@ -68,7 +71,7 @@ net = caffe.Net(args.model, args.weights, caffe.TEST)
 
 transformer = caffe.io.Transformer({'data': net.blobs['data'].data.shape})
 transformer.set_transpose('data', (2,0,1))
-transformer.set_mean('data', np.load(args.mean).mean(1).mean(1))
+transformer.set_mean('data', args.mean)
 transformer.set_raw_scale('data', 255)
 transformer.set_channel_swap('data', (2,1,0))
 
