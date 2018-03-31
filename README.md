@@ -1,4 +1,4 @@
-中文讀者請參考我的文章 [Caffe 遷移學習範例： 分辨猿類相片](https://newtoypia.blogspot.tw/2017/09/caffe-transfer-learning.html)
+中文讀者請參考我的文章 [Caffe 遷移學習範例： 分辨猿類相片](https://newtoypia.blogspot.tw/2017/09/caffe-transfer-learning.html)。
 
 This is a collection of notes and codes about my successful attempt at transfer learning.
 
@@ -9,7 +9,12 @@ This is a collection of notes and codes about my successful attempt at transfer 
 5. Train: ```$CAFFE_ROOT/build/tools/caffe train --solver=/root/shared/imnet/ape/solver.prototxt --weights $CAFFE_ROOT/models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel ; date) 2>&1 | tee train.log```
 6. Find the mean pixel: ```./bpt2npy.py mean.binaryproto mean.npy```
    This will print a 3-element list that looks like '[103.939, 116.779, 123.68]'
-6. Test on unknown images: ```./cnclassify.py -f csv -c /root/shared/imnet/ape/
+   Replace the ```--mean '...'``` values in the following command with these values.
+   Why? Visit [VGG's CNN page](http://www.robots.ox.ac.uk/~vgg/research/very_deep/)
+   and find "mean pixel" within the two "information page" links --
+   we don't really need the mean files at classification time.
+   Simply having the mean pixel values is good enough.
+7. Test on unknown images: ```./cnclassify.py -f csv -c /root/shared/imnet/ape/
    --labels wnid-apes.txt --mean '[103.939, 116.779, 123.68]' --model deploy.prototxt
    --weights _iter_4000.caffemodel```
    Note: By putting all the relevant files in /root/shared/imnet/ape/
