@@ -44,10 +44,17 @@ parser.add_argument('--model', type=str,
     default='models/bvlc_reference_caffenet/deploy.prototxt', help='model def file (deploy)')
 parser.add_argument('--weights', type=str,
     default='models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel', help='modeel weights file')
+parser.add_argument('--gpu', type=int,
+    default=-1, help='gpu id (-1 means cpu-only)')
 parser.add_argument('image_files', nargs='*')
 args = parser.parse_args()
 
-caffe.set_mode_cpu()
+if args.gpu >= 0:
+    caffe.set_mode_gpu()
+    caffe.set_device(args.gpu)
+else:
+    caffe.set_mode_cpu()
+
 m = re.match(r'^top(\d+)$', args.format)
 if m:
     topn = int(float(m.group(1)))
