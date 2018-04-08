@@ -84,7 +84,7 @@ transformer.set_mean('data', args.mean)
 transformer.set_raw_scale('data', 255)
 transformer.set_channel_swap('data', (2,1,0))
 
-net.blobs['data'].reshape(1, 3, net.blobs['data'].width, net.blobs['data'].height)
+net.blobs['data'].reshape(len(args.image_files), 3, net.blobs['data'].width, net.blobs['data'].height)
 
 images = [caffe.io.load_image(img_f) for img_f in args.image_files]
 transformed_images = [transformer.preprocess('data', img) for img in images]
