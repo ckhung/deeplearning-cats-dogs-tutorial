@@ -52,8 +52,10 @@ args = parser.parse_args()
 if args.gpu >= 0:
     caffe.set_mode_gpu()
     caffe.set_device(args.gpu)
+    print ('using GPU ' + str(args.gpu))
 else:
     caffe.set_mode_cpu()
+    print ('cpu mode ')
 
 m = re.match(r'^top(\d+)$', args.format)
 if m:
