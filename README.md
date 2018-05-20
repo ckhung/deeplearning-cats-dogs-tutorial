@@ -5,7 +5,7 @@ This is a collection of notes and codes about my successful attempt at transfer 
 1. Start a [floydhub deep learning docker](https://github.com/floydhub/dl-docker)
 2. ```pip install opencv-python lmdb```
 3. Create lmdb's from pics: ```./pic2lmdb.py wnid-apes.txt /path/to/ape/pics```
-4. Compute mean: ```$CAFFE_ROOT/build/tools/compute_image_mean -backend=lmdb /root/shared/imnet/training/```
+4. Compute mean: ```$CAFFE_ROOT/build/tools/compute_image_mean -backend=lmdb /root/shared/imnet/training/ mean.binaryproto```
 5. Train: ```$CAFFE_ROOT/build/tools/caffe train --solver=/root/shared/imnet/ape/solver.prototxt --weights $CAFFE_ROOT/models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel ; date) 2>&1 | tee train.log```
 6. Find the mean pixel: ```./bpt2npy.py mean.binaryproto mean.npy```
    This will print a 3-element list that looks like '[103.939, 116.779, 123.68]'
