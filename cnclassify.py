@@ -4,9 +4,6 @@
 import numpy as np
 import argparse, sys, caffe, os, re, warnings, ast
 
-def explicit_path(p):
-    return re.search(r'^\.{0,2}/', p)
-
 def read_labels(labelfile):
     pcid2nl = {}    # picture class id to numerical label
     nl2tl = []      # numerical label to text label
@@ -34,16 +31,13 @@ parser.add_argument('-c', '--caffe', type=str,
     default=os.environ['CAFFE_ROOT'], help='root directory of caffe')
 parser.add_argument('-f', '--format', type=str,
     default='top5', help='output format: "top5" or "csv"')
-parser.add_argument('--labels', type=str,
-    default='data/ilsvrc12/synset_words.txt', help='labels file')
+parser.add_argument('--labels', type=str, help='labels file')
 parser.add_argument('--mean', type=str,
     default='[103.939, 116.779, 123.68]', help='mean pixel of training data')
     # visit http://www.robots.ox.ac.uk/~vgg/research/very_deep/
     # Find "mean pixel" within the two "information page" links
-parser.add_argument('--model', type=str,
-    default='models/bvlc_reference_caffenet/deploy.prototxt', help='model def file (deploy)')
-parser.add_argument('--weights', type=str,
-    default='models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel', help='modeel weights file')
+parser.add_argument('--model', type=str, help='model def file (deploy)')
+parser.add_argument('--weights', type=str, help='modeel weights file')
 parser.add_argument('--gpu', type=int,
     default=-1, help='gpu id (-1 means cpu-only)')
 parser.add_argument('image_files', nargs='*')
@@ -67,15 +61,15 @@ else:
     
 if args.caffe[-1] != '/':
     args.caffe += '/'
-if not explicit_path(args.labels):
-    args.labels = args.caffe + args.labels
+if args.labels is None:
+    args.labels = args.caffe + 'data/ilsvrc12/synset_words.txt'
 args.mean = np.array(ast.literal_eval(args.mean))
 if not (len(args.mean) == 3 and isinstance(args.mean[0], (int, long, float))):
     sys.exit('correct format is: --mean "[103.939, 116.779, 123.68]"')
-if not explicit_path(args.model):
-    args.model = args.caffe + args.model
-if not explicit_path(args.weights):
-    args.weights = args.caffe + args.weights
+if args.model is None:
+    args.model = args.caffe + 'models/bvlc_reference_caffenet/deploy.prototxt'
+if args.weights is None:
+    args.weights = args.caffe + 'models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel'
 net = caffe.Net(args.model, args.weights, caffe.TEST) 
 
 transformer = caffe.io.Transformer({'data': net.blobs['data'].data.shape})
