@@ -26,18 +26,41 @@ command line as well as in the *.prototxt files.
 Try ```./pic2lmdb.py -h``` and ```./cnclassify.py -h```
 to see more options.
 
-Code is forked from [deeplearning-cats-dogs-tutorial](https://github.com/adilmoujahid/deeplearning-cats-dogs-tutorial)
+Code is forked from Adil Moujahid's [deeplearning-cats-dogs-tutorial](https://github.com/adilmoujahid/deeplearning-cats-dogs-tutorial)
 and extensively modified to make it more generic.
-Also see the blog post: [A Practical Introduction to Deep Learning
-with Caffe and Python](http://adilmoujahid.com/posts/2016/06/introduction-deep-learning-python-caffe/)
-of the original author.
+Also see his wonderful blog post:
+[A Practical Introduction to Deep Learning
+with Caffe and Python](http://adilmoujahid.com/posts/2016/06/introduction-deep-learning-python-caffe/) explaining the code.
 
 Use vimdiff or similar editors to study the difference
 between my *.prototxt files and the corresponding
-files from caffe or from the original author.
+files from caffe or from Adil Moujahid.
 Also see these two tips for parameter setting in *.prototxt:
 [Running Over Whole Sets/Computing Epochs Instead of Iterations](https://github.com/BVLC/caffe/issues/1094),
 [Choosing batch sizes and tuning sgd](https://github.com/BVLC/caffe/issues/218)
+
+[2018/5/24] See [This job at floydhub](https://www.floydhub.com/ckhung/projects/transfer/70)
+for another demo: transfer learning for classifying a few kinds of fruits.
+All the code, config, and data are available for you to
+reproduce my experiment. Then, suppose you have downloaded
+fruit_iter_60.caffemodel from my output and have
+shared all the required files (via -v ...:/SH)
+into /SH of your local docker, you can create the
+validation statistics:
+```time python /SH/code/cnclassify.py -f csv
+--model /SH/code/deploy.prototxt
+--weights /SH/output/fruit_iter_2000.caffemodel
+--labels /SH/code/fruit-wnid.txt
+$(perl -pe 's#/fruit/#/SH/fruit/#'
+/SH/fruit-lmdb/validation/index.txt)
+> /SH/code/validation.csv```
+Finally generate a table of correct/incorrect
+counts by labels: ```grep , validation.csv | cut -d , -f 3- |
+sed 's# ##g; s#/SH/fruit/##; s#-.*##' |
+python wnidsubst.py -w fruit-wnid.txt |
+python tabcc.py```
+Note that wnidsubst.py and tabcc.py are newly written
+scripts only present in this repo and not found in the floydhub job.
 
 I hope the following illustration is helpful for other
 deep learning newbies behind me.
